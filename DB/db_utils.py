@@ -1,4 +1,4 @@
-from api_utils import Game
+from ..Discord.api_utils import Game
 import sqlite3
 from dotenv import load_dotenv
 from datetime import datetime, date
@@ -82,33 +82,32 @@ def add_games_to_db(games_data):
             conn.close()  # Always close the connection
 
 
-def update_game(game: Game) -> bool:
+def update_games_from_objects(games_objs: list[Game]) -> tuple[int, int]:
     """
-    Updates the specified fields of a game in the 'games' table using a Game object.
+    Updates specified fields for a list of Game objects in the 'games' table.
     The updated fields are: home_score, away_score, game_state, period,
     in_intermission, and seconds_remaining.
 
     Args:
-        game (Game): A Game object containing the updated status and the game's ID.
+        games_objs (list[Game]): A list of Game objects containing updated status and their IDs.
 
     Returns:
-        bool: True if the update was successful, False otherwise.
+        tuple[int, int]: A tuple (total_attempted, total_updated) indicating
+                         how many updates were attempted and how many were successful.
     """
+    if not games_objs:
+        print("No Game objects provided for update.")
+        return 0, 0
+
     conn = None
+    total_attempted = len(games_objs)
+    total_updated = 0
+
     try:
         conn = sqlite3.connect(DATABASE_FILE)
         cursor = conn.cursor()
 
         cursor.execute("PRAGMA foreign_keys = ON;")
-
-        # Extract data directly from the Game object
-        game_id = game.id
-        home_score = game.home_score
-        away_score = game.away_score
-        game_state = game.game_state
-        period = game.period
-        in_intermission_int = 1 if game.inIntermission else 0  # Convert bool to int
-        seconds_remaining = game.secondsRemaining
 
         update_sql = """
         UPDATE games
@@ -121,30 +120,38 @@ def update_game(game: Game) -> bool:
             seconds_remaining = ?
         WHERE id = ?;
         """
-        # The order of parameters in the tuple must match the order of '?' in the SQL query
-        cursor.execute(update_sql, (
-            home_score,
-            away_score,
-            game_state,
-            period,
-            in_intermission_int,
-            seconds_remaining,
-            game_id
-        ))
+
+        data_to_update = []
+        for game_obj in games_objs:
+            # Convert Python boolean to SQLite integer (0 or 1)
+            in_intermission_int = 1 if game_obj.inIntermission else 0
+
+            # The order of values in this tuple must match the order of '?' in the SQL query
+            # (home_score, away_score, game_state, period, in_intermission, seconds_remaining, id)
+            data_to_update.append((
+                game_obj.home_score,
+                game_obj.away_score,
+                game_obj.game_state,
+                game_obj.period,
+                in_intermission_int,
+                game_obj.secondsRemaining,
+                game_obj.id  # The WHERE clause parameter
+            ))
+
+        # Use executemany for efficient batch updates
+        cursor.executemany(update_sql, data_to_update)
         conn.commit()
 
-        if cursor.rowcount == 0:
-            print(f"Warning: No game found with ID '{game_id}' to update.")
-            return False
-        else:
-            print(f"Game '{game_id}' updated successfully.")
-            return True
+        total_updated = cursor.rowcount
+        print(
+            f"Attempted to update {total_attempted} games. Successfully updated {total_updated} game(s).")
+        return total_attempted, total_updated
 
     except sqlite3.Error as e:
-        print(f"Database error during update for game ID '{game.id}': {e}")
+        print(f"Database error during batch update: {e}")
         if conn:
-            conn.rollback()  # Rollback changes on error
-        return False
+            conn.rollback()  # Rollback all changes if any error occurs during batch
+        return total_attempted, 0  # Indicate that 0 were updated on error
     finally:
         if conn:
             conn.close()  # Always close the connection
