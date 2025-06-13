@@ -7,7 +7,7 @@ NHL_API = "https://api-web.nhle.com/v1"
 
 
 class Game:
-    def __init__(self, away_team, home_team, start_time, game_id, home_score=0, away_score=0, period=0, inIntermission=False, secondsRemaining=0, game_state="FUT"):
+    def __init__(self, away_team, home_team, start_time, game_id, game_type, home_score=0, away_score=0, period=0, inIntermission=False, secondsRemaining=0, game_state="FUT"):
         self.away_team = away_team
         self.home_team = home_team
         self.start_time = start_time
@@ -18,6 +18,7 @@ class Game:
         self.inIntermission = inIntermission
         self.secondsRemaining = secondsRemaining
         self.game_state = game_state
+        self.game_type = game_type  # 1 for preseason, 2 for regular season, 3 for playoffs
 
     def __str__(self):
         start = time_to_EST(self.start_time)
@@ -52,7 +53,7 @@ def get_todays_games():
         start_time = game['startTimeUTC']
 
         games.append(Game(game['awayTeam']['abbrev'],
-                          game['homeTeam']['abbrev'], start_time, game['id']))
+                          game['homeTeam']['abbrev'], start_time, game['id'], game['gameType']))
     return games
 
 
@@ -76,7 +77,7 @@ def get_games_by_date(date):
     for game in games_by_date:
         start_time = game['startTimeUTC']
         games.append(Game(game['awayTeam']['abbrev'],
-                          game['homeTeam']['abbrev'], start_time, game['id']))
+                          game['homeTeam']['abbrev'], start_time, game['id'], game['gameType']))
     return games
 
 
@@ -101,7 +102,8 @@ def get_game(game_id):
                     secondsRemaining=0,
                     inIntermission=False,
                     game_state=game_data['gameState'],
-                    start_time=game_data['startTimeUTC'])
+                    start_time=game_data['startTimeUTC'],
+                    game_type=game_data['gameType'])
 
     return Game(game_id=game_id,
                 away_team=game_data['awayTeam']['abbrev'],
@@ -112,4 +114,5 @@ def get_game(game_id):
                 secondsRemaining=game_data['clock']['secondsRemaining'],
                 inIntermission=game_data['clock']['inIntermission'],
                 game_state=game_data['gameState'],
-                start_time=game_data['startTimeUTC'])
+                start_time=game_data['startTimeUTC'],
+                game_type=game_data['gameType'])

@@ -3,6 +3,7 @@ CREATE TABLE games (
     id SERIAL PRIMARY KEY,
     game_date DATE NOT NULL,
     game_time TIME NOT NULL,
+    game_type INT NOT NULL,
     home_abbrv CHAR(3) NOT NULL,
     away_abbrv CHAR(3) NOT NULL,
     home_score INT DEFAULT 0,

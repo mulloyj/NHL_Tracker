@@ -38,7 +38,7 @@ def add_games_to_db(games_data):
         INSERT INTO games (
             game_date, game_time, home_abbrv, away_abbrv,
             home_score, away_score, game_state, tracked,
-            period, in_intermission, seconds_remaining
+            period, in_intermission, seconds_remaining, game_type
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
 
@@ -65,7 +65,8 @@ def add_games_to_db(games_data):
                 tracked_int,  # Use the converted integer
                 game.period,
                 in_intermission_int,  # Use the converted integer
-                game.secondsRemaining
+                game.secondsRemaining,
+                game.game_type
             ))
 
         # Use executemany for efficiency if inserting multiple games
@@ -197,7 +198,7 @@ def get_games_for_today():
 
         for row in rows:
             # Unpack row data into variables based on your table schema
-            game_id, game_date_str, game_time_str, home_abbrv, away_abbrv, \
+            game_id, game_date_str, game_time_str, game_type, home_abbrv, away_abbrv, \
                 home_score, away_score, game_state, tracked_int, \
                 period, in_intermission_int, seconds_remaining, created_at = row
 
@@ -222,7 +223,7 @@ def get_games_for_today():
                 inIntermission=in_intermission_bool,
                 secondsRemaining=seconds_remaining,
                 game_state=game_state,
-                tracked=tracked_bool  # Assign the retrieved 'tracked' value
+                game_type=game_type
             )
             games.append(game)
 
@@ -258,7 +259,7 @@ def get_tracked_games_for_today():
         # Modified SQL query: Added 'AND tracked = 1' to the WHERE clause
         select_sql = """
         SELECT
-            id, game_date, game_time, home_abbrv, away_abbrv,
+            id, game_date, game_time, game_type, home_abbrv, away_abbrv,
             home_score, away_score, game_state, tracked,
             period, in_intermission, seconds_remaining,
             created_at
@@ -274,8 +275,8 @@ def get_tracked_games_for_today():
 
         for row in rows:
             # Unpack row data
-            game_id, game_date_str, game_time_str, home_abbrv, away_abbrv, \
-                home_score, away_score, game_state, tracked_int, \
+            game_id, game_date_str, game_time_str, game_type, home_abbrv, away_abbrv, \
+                home_score, away_score, game_state, \
                 period, in_intermission_int, seconds_remaining, created_at = row
 
             # Reconstruct start_time
@@ -283,7 +284,6 @@ def get_tracked_games_for_today():
             start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S")
 
             # Convert boolean integers back to Python booleans
-            tracked_bool = bool(tracked_int)
             in_intermission_bool = bool(in_intermission_int)
 
             # Create Game object
@@ -298,7 +298,7 @@ def get_tracked_games_for_today():
                 inIntermission=in_intermission_bool,
                 secondsRemaining=seconds_remaining,
                 game_state=game_state,
-                tracked=tracked_bool
+                game_type=game_type
             )
             games.append(game)
 
