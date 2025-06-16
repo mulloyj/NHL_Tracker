@@ -1,0 +1,10 @@
+{
+  "domain": "my_nhl_tracker",
+  "name": "My NHL Tracker",
+  "config_flow": true,
+  "documentation": "https://github.com/mulloyj/nhl_tracker",
+  "issue_tracker": "https://github.com/mulloyj/nhl_tracker/issues",
+  "requirements": ["aiohttp", "nhl-api-py>=2.19.0"],
+  "version": "1.0.0",
+  "codeowners": ["mulloyj"]
+}
